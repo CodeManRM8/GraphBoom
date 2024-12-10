@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Graph Plotter</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        h1 {
+            margin: 20px;
+        }
+        form {
+            margin: 20px;
+            width: 90%;
+            max-width: 800px;
+        }
+        #graph {
+            width: 90%;
+            max-width: 900px;
+            height: 500px;
+            margin-top: 20px;
+        }
+        .btn-download {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Graph Plotter</h1><h6>by StupidBoomX</h6>
+
+    <form id="plot-form" class="needs-validation">
+        <div class="mb-3">
+            <label for="num-lines" class="form-label">Number of Lines:</label>
+            <input type="number" class="form-control" id="num-lines" placeholder="e.g., 2" min="1" max="10" required>
+        </div>
+
+        <button type="button" class="btn btn-secondary" id="generate-inputs">Generate Input Fields</button>
+
+        <div id="line-inputs" class="mt-3"></div>
+
+        <div class="mb-3">
+            <label for="x-axis-label" class="form-label">X-Axis Label:</label>
+            <input type="text" class="form-control" id="x-axis-label" placeholder="e.g., Time (s)">
+        </div>
+
+        <div class="mb-3">
+            <label for="y-axis-label" class="form-label">Y-Axis Label:</label>
+            <input type="text" class="form-control" id="y-axis-label" placeholder="e.g., Distance (m)">
+        </div>
+
+        <div class="mb-3">
+            <label for="graph-title" class="form-label">Graph Title:</label>
+            <input type="text" class="form-control" id="graph-title" placeholder="e.g., Motion Analysis">
+        </div>
+
+        <button type="button" class="btn btn-primary" id="plot-button">Plot Graph</button>
+    </form>
+
+    <div id="graph"></div>
+    <button type="button" class="btn btn-success btn-download" id="download-button">Download Graph</button>
+
+    <script>
+        document.getElementById('generate-inputs').addEventListener('click', () => {
+            const numLines = parseInt(document.getElementById('num-lines').value, 10);
+            const lineInputsDiv = document.getElementById('line-inputs');
+            lineInputsDiv.innerHTML = '';
+
+            for (let i = 1; i <= numLines; i++) {
+                const lineInputGroup = document.createElement('div');
+                lineInputGroup.className = 'mb-3';
+
+                lineInputGroup.innerHTML = `
+                    <label class="form-label">Line ${i} Name:</label>
+                    <input type="text" class="form-control line-name" placeholder="e.g., Line ${i}">
+
+                    <label class="form-label mt-2">X Values for Line ${i} (comma-separated):</label>
+                    <input type="text" class="form-control line-x" placeholder="e.g., 1, 2, 3, 4">
+
+                    <label class="form-label mt-2">Y Values for Line ${i} (comma-separated):</label>
+                    <input type="text" class="form-control line-y" placeholder="e.g., 10, 20, 30, 40">
+
+                    <label class="form-label mt-2">Graph Type for Line ${i}:</label>
+                    <select class="form-select line-type">
+                        <option value="scatter" selected>Scatter Plot</option>
+                        <option value="bar">Bar Chart</option>
+                        <option value="line">Line Chart</option>
+                    </select>
+                `;
+
+                lineInputsDiv.appendChild(lineInputGroup);
+            }
+        });
+
+        document.getElementById('plot-button').addEventListener('click', () => {
+            const xAxisLabel = document.getElementById('x-axis-label').value || 'X-axis';
+            const yAxisLabel = document.getElementById('y-axis-label').value || 'Y-axis';
+            const graphTitle = document.getElementById('graph-title').value || 'Graph';
+
+            const lineNames = Array.from(document.getElementsByClassName('line-name')).map(input => input.value || 'Unnamed Line');
+            const xValuesArray = Array.from(document.getElementsByClassName('line-x')).map(input => input.value.split(',').map(Number));
+            const yValuesArray = Array.from(document.getElementsByClassName('line-y')).map(input => input.value.split(',').map(Number));
+            const lineTypes = Array.from(document.getElementsByClassName('line-type')).map(select => select.value);
+
+            const data = xValuesArray.map((xValues, index) => ({
+                x: xValues,
+                y: yValuesArray[index],
+                type: lineTypes[index],  // Set the graph type dynamically
+                mode: lineTypes[index] === 'scatter' ? 'lines+markers' : undefined,
+                name: lineNames[index],
+                marker: { color: `hsl(${index * 40}, 70%, 50%)` }
+            }));
+
+            const layout = {
+                title: graphTitle,
+                xaxis: { title: xAxisLabel },
+                yaxis: { title: yAxisLabel },
+                showlegend: true
+            };
+
+            Plotly.newPlot('graph', data, layout);
+        });
+
+        document.getElementById('download-button').addEventListener('click', () => {
+            Plotly.toImage(document.getElementById('graph'), { format: 'png' }).then((imageData) => {
+                const a = document.createElement('a');
+                a.href = imageData;
+                a.download = 'graph.png';
+                a.click();
+            });
+        });
+    </script>
+</body>
+</html>
